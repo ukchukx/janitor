@@ -4,17 +4,33 @@ defmodule Janitor.Application do
   @moduledoc false
 
   use Application
+  require Logger
+
+  @app :janitor
 
   @impl true
   def start(_type, _args) do
+    Confex.resolve_env!(@app)
+    registry = Application.get_env(@app, :schedule_registry)
+    supervisor = Application.get_env(@app, :schedule_supervisor)
+
     children = [
-      # Starts a worker by calling: Janitor.Worker.start_link(arg)
-      # {Janitor.Worker, arg}
+      {Registry, [name: registry, keys: :unique]},
+      {DynamicSupervisor, [name: supervisor, strategy: :one_for_one]},
+      {Finch, name: @app, pools: %{:default => [size: 10, count: 2]}}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Janitor.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    {:ok, _} = start_result = Supervisor.start_link(children, opts)
+
+    if Application.get_env(@app, :env) != :test do
+      Logger.info("Loading existing schedules...")
+      Janitor.start()
+    end
+
+    start_result
   end
 end
