@@ -20,6 +20,7 @@ defmodule Janitor.Boundary.BackupScheduleManager do
   def start(schedule = %BackupSchedule{}) do
     supervisor = Application.get_env(:janitor, :schedule_supervisor)
     DynamicSupervisor.start_child(supervisor, {__MODULE__, schedule})
+    schedule
   end
 
   def running?(id) do
@@ -54,6 +55,13 @@ defmodule Janitor.Boundary.BackupScheduleManager do
   def run_backup(id) do
     case running?(id) do
       true -> id |> via |> GenServer.call(:run_backup, 20_000)
+      false -> :not_running
+    end
+  end
+
+  def update_backup_schedule(schedule = %BackupSchedule{id: id}) do
+    case running?(id) do
+      true -> id |> via |> GenServer.call({:update_fields, schedule}, 20_000)
       false -> :not_running
     end
   end
@@ -113,6 +121,10 @@ defmodule Janitor.Boundary.BackupScheduleManager do
     Logger.info("Running (manual) backup for #{schedule}")
 
     {:reply, :ok, do_run_backup(schedule, NaiveDateTime.utc_now())}
+  end
+
+  def handle_call({:update_fields, updated_schedule}, _from, %{backups: backups}) do
+    {:reply, :ok, %{updated_schedule | backups: backups}}
   end
 
   def handle_info(:tick, schedule) do

@@ -1,7 +1,6 @@
 use Mix.Config
 
-config :janitor, env: :test
-config :logger, level: :warn
+config :janitor_persistence, env: :test
 
 config :janitor_persistence, JanitorPersistence.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,

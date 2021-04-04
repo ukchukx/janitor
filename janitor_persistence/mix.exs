@@ -1,19 +1,15 @@
-defmodule Janitor.MixProject do
+defmodule JanitorPersistence.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :janitor,
+      app: :janitor_persistence,
       version: "1.0.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       build_embedded: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases(),
-      dialyzer: [
-        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
-        plt_add_apps: [:mix]
-      ]
+      aliases: aliases()
     ]
   end
 
@@ -21,7 +17,7 @@ defmodule Janitor.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Janitor.Application, []}
+      mod: {JanitorPersistence.Application, []}
     ]
   end
 
@@ -31,15 +27,15 @@ defmodule Janitor.MixProject do
       {:confex, "~> 3.4.0"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:elixir_uuid, "~> 1.2"},
-      {:finch, "~> 0.4"},
-      {:janitor_persistence, path: "./janitor_persistence"},
-      {:jason, "~> 1.2"}
+      {:ecto_sql, "~> 3.5.1"},
+      {:ecto_sqlite3, "~> 0.5.2"}
     ]
   end
 
   defp aliases do
     [
+      setup: ["deps.get", "ecto.create", "ecto.migrate"],
+      reset: ["ecto.drop", "setup"],
       test: ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end

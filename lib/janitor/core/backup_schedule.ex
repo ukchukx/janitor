@@ -28,41 +28,55 @@ defmodule Janitor.Core.BackupSchedule do
   }
 
   def new(name, db, username, opts \\ []) do
+    frequency = Keyword.get(opts, :frequency, "daily")
+
     attrs = %{
       id: Keyword.get(opts, :id, Utils.new_id()),
       name: name,
       db: db,
       username: username,
+      frequency: frequency,
       host: Keyword.get(opts, :host, "localhost"),
       port: Keyword.get(opts, :port, default_port_for(db)),
-      password: Keyword.get(opts, :password, ""),
-      frequency: Keyword.get(opts, :frequency, "daily"),
-      days: Keyword.get(opts, :days, []),
-      times: Keyword.get(opts, :times, ["12:00"]),
+      password: Keyword.get(opts, :password),
       preserve: Keyword.get(opts, :preserve, 5),
+      days: Keyword.get(opts, :days, get_default_days(frequency)),
+      times: Keyword.get(opts, :times, ["12:00"]),
       backups: Keyword.get(opts, :backups, [])
     }
 
     struct!(__MODULE__, attrs)
   end
 
-  def backup_command(s = %__MODULE__{db: "mysql", host: host}, out_file) do
+  def backup_command(s = %__MODULE__{db: "mysql", host: host, password: p}, out_file) do
     host =
       case host do
         "localhost" -> "127.0.0.1"
         host -> host
       end
 
-    "MYSQL_PWD=\"#{s.password}\" mysqldump -h #{host} --port=#{s.port} -u #{s.username}" <>
-      " #{s.name} > #{out_file}"
+    p =
+      case p do
+        nil -> ""
+        p -> p
+      end
+
+    "MYSQL_PWD=\"#{p}\" mysqldump -h #{host} --port=#{s.port} -u #{s.username} #{s.name}" <>
+      " > #{out_file}"
   end
 
-  def backup_command(s = %__MODULE__{db: "postgresql", host: host}, out_file) do
-    "PGPASSWORD='#{s.password}' pg_dump -U #{s.username} -h #{host} --port=#{s.port}" <>
-      " #{s.name} > #{out_file}"
+  def backup_command(s = %__MODULE__{db: "postgresql", host: host, password: p}, out_file) do
+    p =
+      case p do
+        nil -> ""
+        p -> p
+      end
+
+    "PGPASSWORD='#{p}' pg_dump -U #{s.username} -h #{host} --port=#{s.port} #{s.name}" <>
+      " > #{out_file}"
   end
 
-  def backup_command(_schedule, _date, _path_prefix), do: "echo 0"
+  def backup_command(_schedule, _out_prefix), do: "echo 0"
 
   def new_file_name(s = %__MODULE__{}, date \\ nil) do
     date =
@@ -108,6 +122,9 @@ defmodule Janitor.Core.BackupSchedule do
     day_of_date = Map.get(@days_of_week, day_index)
     Enum.any?(days, &(&1 == day_of_date))
   end
+
+  defp get_default_days("weekly"), do: ["sun"]
+  defp get_default_days(_), do: []
 
   defp default_port_for("mysql"), do: 3306
   defp default_port_for("postgresql"), do: 5432

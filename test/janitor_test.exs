@@ -1,6 +1,6 @@
 defmodule JanitorTest do
   alias Janitor.Core.BackupSchedule
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   defp sample_daily_schedule do
     BackupSchedule.new("x", "mysql", "root", times: ["12:00", "22:00"], frequency: "daily")
@@ -24,5 +24,30 @@ defmodule JanitorTest do
     date = ~N[2021-04-03 12:00:00]
     assert BackupSchedule.should_run?(sample_daily_schedule(), date)
     assert BackupSchedule.should_run?(sample_weekly_schedule(), date)
+  end
+
+  test "backup schedules can be created" do
+    %{id: id} =
+      sample_daily_schedule()
+      |> Map.from_struct()
+      |> Map.drop([:__struct__])
+      |> Janitor.create_backup_schedule()
+      |> elem(1)
+      |> Janitor.start_schedule()
+
+    assert {:ok, %BackupSchedule{}} = Janitor.get_backup_schedule(id)
+  end
+
+  test "backup schedules can be updated" do
+    %{id: id} =
+      sample_weekly_schedule()
+      |> Map.from_struct()
+      |> Map.drop([:__struct__])
+      |> Janitor.create_backup_schedule()
+      |> elem(1)
+      |> Janitor.start_schedule()
+
+    {:ok, %BackupSchedule{name: updated_name}} = Janitor.update_backup_schedule(id, %{name: "a"})
+    assert "a" == updated_name
   end
 end
