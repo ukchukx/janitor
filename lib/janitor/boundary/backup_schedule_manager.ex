@@ -1,7 +1,7 @@
 defmodule Janitor.Boundary.BackupScheduleManager do
   @moduledoc false
 
-  alias Janitor.Boundary.{B2Bucket, Utils}
+  alias Janitor.Boundary.Utils
   alias Janitor.Core.BackupSchedule
 
   use GenServer
@@ -55,6 +55,13 @@ defmodule Janitor.Boundary.BackupScheduleManager do
   def run_backup(id) do
     case running?(id) do
       true -> id |> via |> GenServer.call(:run_backup, 20_000)
+      false -> :not_running
+    end
+  end
+
+  def delete_backup(id, file_name) do
+    case running?(id) do
+      true -> id |> via |> GenServer.call({:delete_backup, file_name}, 20_000)
       false -> :not_running
     end
   end
@@ -118,48 +125,63 @@ defmodule Janitor.Boundary.BackupScheduleManager do
   end
 
   def handle_call(:run_backup, _from, schedule) do
-    Logger.info("Running (manual) backup for #{schedule}")
+    now = NaiveDateTime.utc_now()
+    Logger.info("Running (manual) backup of #{schedule} at #{now}")
 
-    {:reply, :ok, do_run_backup(schedule, NaiveDateTime.utc_now())}
+    {:reply, :ok, do_run_backup(schedule, now)}
   end
 
   def handle_call({:update_fields, updated_schedule}, _from, %{backups: backups}) do
     {:reply, :ok, %{updated_schedule | backups: backups}}
   end
 
+  def handle_call({:delete_backup, file_name}, _from, schedule = %{backups: backups}) do
+    updated_backups = Enum.filter(backups, & &1.name == file_name)
+    backups
+    |> Enum.find(& &1.name == file_name)
+    |> case do
+      nil ->
+        {:reply, :not_found, schedule}
+      backup ->
+        delete_backups([backup])
+        {:reply, :ok, %{schedule | backups: updated_backups}}
+    end
+  end
+
   def handle_info(:tick, schedule) do
-    Logger.info("Running (automatic) backup for #{schedule}")
     schedule_next_tick()
-    {:noreply, do_run_backup(schedule, NaiveDateTime.utc_now())}
+    now = NaiveDateTime.utc_now()
+    case BackupSchedule.should_run?(schedule, now) do
+      false ->
+        {:noreply, schedule}
+      true ->
+        Logger.info("Running (automatic) backup of #{schedule} at #{now}")
+        {:noreply, do_run_backup(schedule, now)}
+    end
   end
 
   #
   # Helpers
   #
 
+  defp bucket_module, do: Application.get_env(:janitor, :bucket_store)
+
   defp do_run_backup(schedule = %BackupSchedule{}, date_time) do
-    case BackupSchedule.should_run?(schedule, date_time) do
-      false ->
-        schedule
+    temp_dir = Utils.tmp_dir()
+    file_name = BackupSchedule.new_file_name(schedule, date_time)
+    backup_file = "#{temp_dir}#{file_name}"
 
-      true ->
-        Logger.info("Running backup of #{schedule} at #{date_time}")
-        temp_dir = Utils.tmp_dir()
-        file_name = BackupSchedule.new_file_name(schedule, date_time)
-        backup_file = "#{temp_dir}#{file_name}"
+    schedule
+    |> BackupSchedule.backup_command(backup_file)
+    |> to_charlist
+    |> :os.cmd()
 
-        schedule
-        |> BackupSchedule.backup_command(backup_file)
-        |> to_charlist
-        |> :os.cmd()
+    backups = upload_and_prune_backups(schedule, temp_dir, file_name)
 
-        backups = upload_and_prune_backups(schedule, temp_dir, file_name)
+    Logger.info("Backup done. Removing tmp file #{backup_file}")
+    File.rm(backup_file)
 
-        Logger.info("Backup done. Removing tmp file #{backup_file}")
-        File.rm(backup_file)
-
-        %{schedule | backups: backups}
-    end
+    %{schedule | backups: backups}
   end
 
   defp upload_and_prune_backups(
@@ -167,7 +189,7 @@ defmodule Janitor.Boundary.BackupScheduleManager do
          temp_dir,
          file_name
        ) do
-    case B2Bucket.upload_backup("#{temp_dir}#{file_name}", file_name) do
+    case bucket_module().upload_backup("#{temp_dir}#{file_name}", file_name) do
       {:error, _} ->
         backups
 
@@ -206,11 +228,11 @@ defmodule Janitor.Boundary.BackupScheduleManager do
   end
 
   defp delete_backups([]), do: :ok
-  defp delete_backups(backups = [_ | _]), do: B2Bucket.delete_backups(backups)
+  defp delete_backups(backups = [_ | _]), do: bucket_module().delete_backups(backups)
 
-  defp flush_saved_backups(name), do: B2Bucket.clear_backups_for_schedule(name)
+  defp flush_saved_backups(name), do: bucket_module().clear_backups_for_schedule(name)
 
-  defp fetch_saved_backups(name), do: B2Bucket.backups_for_schedule(name)
+  defp fetch_saved_backups(name), do: bucket_module().backups_for_schedule(name)
 
   defp schedule_next_tick do
     now = NaiveDateTime.utc_now()
