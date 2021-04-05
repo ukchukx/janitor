@@ -24,8 +24,6 @@ defmodule Janitor.Boundary.B2Bucket do
   end
 
   def backups_for_schedule(name) do
-    Logger.info("Fetching backups for '#{name}'")
-
     all_backups()
     |> Enum.filter(&String.starts_with?(&1.name, name))
     |> Enum.map(&add_download_link_to_backup/1)
@@ -100,7 +98,8 @@ defmodule Janitor.Boundary.B2Bucket do
       {:ok, %{token: token, download_url: d_url}} ->
         {:ok, %{url: "#{d_url}#{file_path}", authorization: token}}
 
-      {:error, _} ->
+      {:error, err} ->
+        Logger.error("Fetching download link for '#{file_name}' returned #{inspect(err)}")
         {:error, :unsuccessful}
     end
   end
@@ -141,7 +140,7 @@ defmodule Janitor.Boundary.B2Bucket do
       opts
       |> Keyword.get(:method, :get)
       |> Finch.build(url, headers, Keyword.get(opts, :body))
-      |> Finch.request(@app, pool_timeout: 20_000)
+      |> Finch.request(@app, pool_timeout: 50_000)
 
     case Keyword.get(opts, :decode_result, true) do
       false -> result

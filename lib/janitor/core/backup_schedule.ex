@@ -2,6 +2,9 @@ defmodule Janitor.Core.BackupSchedule do
   @moduledoc false
   alias Janitor.Core.Utils
 
+  @fields ~w[id db name host port username password frequency days times preserve backups]a
+  @derive {Jason.Encoder, only: @fields}
+
   defstruct [
     :id,
     :db,
@@ -18,13 +21,13 @@ defmodule Janitor.Core.BackupSchedule do
   ]
 
   @days_of_week %{
-    1 => "sun",
-    2 => "tue",
-    3 => "wed",
-    4 => "thu",
-    5 => "fri",
-    6 => "sat",
-    7 => "sun"
+    1 => "Monday",
+    2 => "Tuesday",
+    3 => "Wednesday",
+    4 => "Thursday",
+    5 => "Friday",
+    6 => "Saturday",
+    7 => "Sunday"
   }
 
   def new(name, db, username, opts \\ []) do

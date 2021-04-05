@@ -28,7 +28,7 @@ defmodule JanitorPersistence.MixProject do
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ecto_sql, "~> 3.5.1"},
-      {:ecto_sqlite3, "~> 0.5.2"}
+      {:ecto_sqlite3, "~> 0.5.3"}
     ]
   end
 

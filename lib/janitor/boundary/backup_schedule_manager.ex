@@ -47,21 +47,21 @@ defmodule Janitor.Boundary.BackupScheduleManager do
 
   def flush_backups(id) do
     case running?(id) do
-      true -> id |> via |> GenServer.call(:flush_backups, 20_000)
+      true -> id |> via |> GenServer.call(:flush_backups, 60_000)
       false -> :not_running
     end
   end
 
   def run_backup(id) do
     case running?(id) do
-      true -> id |> via |> GenServer.call(:run_backup, 20_000)
+      true -> id |> via |> GenServer.call(:run_backup, 60_000)
       false -> :not_running
     end
   end
 
   def delete_backup(id, file_name) do
     case running?(id) do
-      true -> id |> via |> GenServer.call({:delete_backup, file_name}, 20_000)
+      true -> id |> via |> GenServer.call({:delete_backup, file_name}, 30_000)
       false -> :not_running
     end
   end
@@ -121,39 +121,48 @@ defmodule Janitor.Boundary.BackupScheduleManager do
     |> BackupSchedule.file_name_prefix()
     |> flush_saved_backups
 
-    {:reply, :ok, %{schedule | backups: []}}
+    schedule = %{schedule | backups: []}
+
+    {:reply, schedule, schedule}
   end
 
   def handle_call(:run_backup, _from, schedule) do
     now = NaiveDateTime.utc_now()
     Logger.info("Running (manual) backup of #{schedule} at #{now}")
+    schedule = do_run_backup(schedule, now)
 
-    {:reply, :ok, do_run_backup(schedule, now)}
+    {:reply, schedule, schedule}
   end
 
   def handle_call({:update_fields, updated_schedule}, _from, %{backups: backups}) do
-    {:reply, :ok, %{updated_schedule | backups: backups}}
+    schedule = %{updated_schedule | backups: backups}
+    {:reply, schedule, schedule}
   end
 
   def handle_call({:delete_backup, file_name}, _from, schedule = %{backups: backups}) do
-    updated_backups = Enum.filter(backups, & &1.name == file_name)
+    updated_backups = Enum.filter(backups, &(&1.name != file_name))
+
     backups
-    |> Enum.find(& &1.name == file_name)
+    |> Enum.find(&(&1.name == file_name))
     |> case do
       nil ->
         {:reply, :not_found, schedule}
+
       backup ->
         delete_backups([backup])
-        {:reply, :ok, %{schedule | backups: updated_backups}}
+        schedule = %{schedule | backups: updated_backups}
+        {:reply, schedule, schedule}
     end
   end
 
   def handle_info(:tick, schedule) do
     schedule_next_tick()
     now = NaiveDateTime.utc_now()
+
     case BackupSchedule.should_run?(schedule, now) do
       false ->
         {:noreply, schedule}
+
       true ->
         Logger.info("Running (automatic) backup of #{schedule} at #{now}")
         {:noreply, do_run_backup(schedule, now)}

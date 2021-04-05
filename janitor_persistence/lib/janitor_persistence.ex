@@ -7,10 +7,24 @@ defmodule JanitorPersistence do
 
   def save_backup_schedule(backup_schedule), do: save(BackupSchedule, backup_schedule)
 
-  def all_backup_schedules do
+  def all_backup_schedules, do: BackupSchedule |> Repo.all |> Enum.map(&BackupSchedule.to_map/1)
+
+  def clear_backups do
+    Repo.delete_all(BackupSchedule)
+    :ok
+  end
+
+  def delete_backup_schedule(schedule_id) do
     BackupSchedule
-    |> Repo.all
-    |> Enum.map(&BackupSchedule.to_map/1)
+    |> Repo.get(schedule_id)
+    |> case do
+      nil ->
+        :ok
+
+      schedule ->
+        Repo.delete(schedule)
+        :ok
+    end
   end
 
   defp save(schema, %{id: id} = model) do

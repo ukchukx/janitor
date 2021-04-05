@@ -25,7 +25,7 @@
           "lib/",
           "test/",
           "janitor_persistence/*/lib/",
-          "janitor_api/*/lib/"
+          "janitor_web/*/lib/"
         ],
         excluded: [~r"/_build/", ~r"/.elixir_ls/", ~r"/deps/", ~r"/node_modules/"]
       },

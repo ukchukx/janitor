@@ -10,9 +10,9 @@ defmodule Janitor.Boundary.Utils do
   def id_from_pid({:undefined, pid, :worker, [mod]}, registry, mod),
     do: Registry.keys(registry, pid)
 
-  def available_databases(host, port, "postgresql", user, password) do
+  def available_databases(host, port, "postgresql", user, pwd) do
     command =
-      "PGPASSWORD='#{password}' psql -d postgres -U #{user} -h #{host} --port=#{port} -c 'select datname from pg_database;'"
+      "PGPASSWORD='#{pwd}' psql -d postgres -U #{user} -h #{host} --port=#{port} -c 'select datname from pg_database;'"
 
     command
     |> to_charlist
@@ -32,15 +32,14 @@ defmodule Janitor.Boundary.Utils do
     end)
   end
 
-  def available_databases(host, port, "mysql", user, password) do
+  def available_databases(host, port, "mysql", user, pwd) do
     host =
       case host do
         "localhost" -> "127.0.0.1"
         host -> host
       end
 
-    command =
-      "MYSQL_PWD='#{password}' mysql -h #{host} --port=#{port} -u #{user} -e 'show databases;'"
+    command = "MYSQL_PWD='#{pwd}' mysql -h #{host} --port=#{port} -u #{user} -e 'show databases;'"
 
     command
     |> to_charlist

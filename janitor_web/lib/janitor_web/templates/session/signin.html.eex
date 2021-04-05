@@ -1,0 +1,31 @@
+<div class="container is-fluid">
+  <div class="columns is-desktop is-vcentered mt-5" style="height: 100vh;">
+    <div class="column is-one-third is-offset-one-third">
+      <form action="<%= @post_path %>" method="post">
+        <input name="_csrf_token" type="hidden" value="<%= Phoenix.Controller.get_csrf_token() %>">
+        <input name="_utf8" type="hidden" value="✓">
+        <div class="field">
+          <div class="control has-icons-left">
+            <input type="password" name="password" class="input" placeholder="Password" />
+            <span class="icon is-small is-left">
+              <svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="button is-fullwidth is-primary is-outlined">
+            <span>Sign In</span>
+            <span class="icon is-small">
+              <svg class="h-6 w-6" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor">
+                <path d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

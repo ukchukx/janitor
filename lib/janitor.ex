@@ -26,13 +26,33 @@ defmodule Janitor do
     BackupScheduleManager.start(schedule)
   end
 
-  def create_backup_schedule(attrs) when is_map(attrs) do
+  def stop_schedule(schedule = %BackupSchedule{id: id}) when not is_nil(id) do
+    BackupScheduleManager.stop(schedule)
+  end
+
+  def delete_backup_schedule(id) do
+    id
+    |> BackupScheduleManager.flush_backups()
+    |> case do
+      schedule = %BackupSchedule{} -> BackupScheduleManager.stop(schedule)
+      x -> x
+    end
+
+    persistence_module().delete_backup_schedule(id)
+  end
+
+  def create_backup_schedule(attrs, start_process \\ false) when is_map(attrs) do
     case BackupScheduleValidator.errors(attrs) do
       :ok ->
         backup_schedule =
           BackupSchedule.new(attrs.name, attrs.db, attrs.username, Keyword.new(attrs))
 
         persistence_module().save_backup_schedule(backup_schedule)
+
+        if start_process do
+          start_schedule(backup_schedule)
+        end
+
         {:ok, backup_schedule}
 
       errors ->
@@ -46,11 +66,13 @@ defmodule Janitor do
       schedule =
         attrs
         |> Map.keys()
-        |> Enum.reduce(schedule, fn field, schedule -> %{schedule | field => attrs[field]} end)
+        |> Enum.filter(&(&1 != :backups))
+        |> Enum.reduce(schedule, fn field, schedule ->
+          %{schedule | field => attrs[field]}
+        end)
 
       persistence_module().save_backup_schedule(schedule)
-      BackupScheduleManager.update_backup_schedule(schedule)
-      {:ok, schedule}
+      {:ok, BackupScheduleManager.update_backup_schedule(schedule)}
     else
       errors -> {:error, errors}
       :not_running -> {:error, :not_found}
@@ -62,5 +84,18 @@ defmodule Janitor do
       schedule = %{} -> {:ok, schedule}
       :not_running -> {:error, :not_found}
     end
+  end
+
+  def all_backup_schedules do
+    BackupScheduleManager.active_schedules()
+    |> Enum.map(&BackupScheduleManager.state/1)
+  end
+
+  def run_backup(id), do: BackupScheduleManager.run_backup(id)
+
+  def delete_backup(id, file_name), do: BackupScheduleManager.delete_backup(id, file_name)
+
+  if Application.get_env(:janitor, :env) == :test do
+    def clear_backups_from_db, do: persistence_module().clear_backups()
   end
 end

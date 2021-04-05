@@ -17,7 +17,7 @@ defmodule Janitor.Application do
     children = [
       {Registry, [name: registry, keys: :unique]},
       {DynamicSupervisor, [name: supervisor, strategy: :one_for_one]},
-      {Finch, name: @app, pools: %{:default => [size: 10, count: 2]}}
+      {Finch, name: @app, pools: %{:default => [size: 20, count: 8]}}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

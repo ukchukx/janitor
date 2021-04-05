@@ -1,6 +1,7 @@
 use Mix.Config
 
 config :janitor,
+  bucket_store: Janitor.Boundary.B2Bucket,
   bucket_id: {:system, "JANITOR_BUCKET_ID"},
   bucket_name: {:system, "JANITOR_BUCKET_NAME"},
   bucket_access_key: {:system, "JANITOR_BUCKET_ACCESS_KEY"},
@@ -20,6 +21,7 @@ config :logger, :console,
 config :janitor_persistence,
   ecto_repos: [JanitorPersistence.Repo]
 
-config :janitor_persistence, JanitorPersistence.Repo, database: "priv/db/janitor.sqlite3"
+config :janitor_persistence, JanitorPersistence.Repo,
+  database: "../janitor_web/priv/db/janitor.sqlite3"
 
 import_config "#{Mix.env()}.exs"
