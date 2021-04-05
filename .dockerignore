@@ -1,0 +1,9 @@
+/deps
+/.elixir_ls
+/_build
+/test
+/k8s
+/janitor_persistence/_build
+/janitor_persistence/deps
+/janitor_web/_build
+/janitor_web/deps

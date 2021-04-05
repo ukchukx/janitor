@@ -1,9 +1,10 @@
 defmodule Janitor do
   @moduledoc false
 
-  require Logger
-  alias Janitor.Core.{BackupSchedule, BackupScheduleValidator}
   alias Janitor.Boundary.BackupScheduleManager
+  alias Janitor.Core.{BackupSchedule, BackupScheduleValidator}
+
+  require Logger
 
   def persistence_module, do: Application.get_env(:janitor, :persistence_module)
 
