@@ -9,7 +9,6 @@ defmodule Janitor.MixProject do
       start_permanent: Mix.env() == :prod,
       build_embedded: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases(),
       dialyzer: [
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         plt_add_apps: [:mix]
@@ -35,12 +34,6 @@ defmodule Janitor.MixProject do
       {:finch, "~> 0.4"},
       {:janitor_persistence, path: "./janitor_persistence"},
       {:jason, "~> 1.2"}
-    ]
-  end
-
-  defp aliases do
-    [
-      test: ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
 end

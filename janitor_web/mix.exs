@@ -35,6 +35,7 @@ defmodule JanitorWeb.MixProject do
   defp deps do
     [
       {:atomize_keys, "~> 1.1"},
+      {:confex, "~> 3.4.0"},
       {:janitor, path: ".."},
       {:phoenix, "~> 1.5.6"},
       {:phoenix_html, "~> 2.11"},

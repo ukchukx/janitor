@@ -10,23 +10,12 @@ defmodule JanitorPersistence.Application do
     Confex.resolve_env!(:janitor_persistence)
 
     children = [
-      JanitorPersistence.Repo
+      {JanitorPersistence, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: JanitorPersistence.Supervisor]
-    case Supervisor.start_link(children, opts) do
-      {:ok, _} = res ->
-        IO.inspect Application.get_env(:janitor_persistence, JanitorPersistence.Repo)
-        if Application.get_env(:janitor_persistence, :env) != :test do
-          JanitorPersistence.Migrate.run()
-        end
-
-        res
-
-      x ->
-        x
-    end
+    Supervisor.start_link(children, opts)
   end
 end

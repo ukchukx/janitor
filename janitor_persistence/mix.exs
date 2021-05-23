@@ -8,8 +8,7 @@ defmodule JanitorPersistence.MixProject do
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       build_embedded: Mix.env() == :prod,
-      deps: deps(),
-      aliases: aliases()
+      deps: deps()
     ]
   end
 
@@ -27,16 +26,8 @@ defmodule JanitorPersistence.MixProject do
       {:confex, "~> 3.4.0"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:ecto_sql, "~> 3.5.1"},
-      {:ecto_sqlite3, "~> 0.5.3"}
+      {:persistent_ets, "~> 0.2.1"}
     ]
   end
 
-  defp aliases do
-    [
-      setup: ["deps.get", "ecto.create", "ecto.migrate"],
-      reset: ["ecto.drop", "setup"],
-      test: ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate --quiet", "test"]
-    ]
-  end
 end

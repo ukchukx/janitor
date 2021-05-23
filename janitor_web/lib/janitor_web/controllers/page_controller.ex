@@ -7,13 +7,15 @@ defmodule JanitorWeb.PageController do
   end
 
   def available_databases(conn, params) do
-    available = Utils.available_databases(
-      params["host"],
-      params["port"],
-      params["db"],
-      params["username"],
-      params["password"]
-    )
+    available =
+      Utils.available_databases(
+        params["host"],
+        params["port"],
+        params["db"],
+        params["username"],
+        params["password"]
+      )
+
     json(conn, available)
   end
 
@@ -23,13 +25,14 @@ defmodule JanitorWeb.PageController do
 
   def create_backup_schedule(conn, params) do
     params
-    |> AtomizeKeys.atomize_string_keys
+    |> AtomizeKeys.atomize_string_keys()
     |> Janitor.create_backup_schedule(true)
     |> case do
       {:ok, backup_schedule} ->
         conn
         |> put_status(201)
         |> json(backup_schedule)
+
       {:error, err} ->
         conn
         |> put_status(422)
@@ -45,6 +48,7 @@ defmodule JanitorWeb.PageController do
         conn
         |> put_status(200)
         |> json(backup_schedule)
+
       {:error, err} ->
         conn
         |> put_status(422)

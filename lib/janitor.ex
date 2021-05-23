@@ -97,6 +97,11 @@ defmodule Janitor do
   def delete_backup(id, file_name), do: BackupScheduleManager.delete_backup(id, file_name)
 
   if Application.get_env(:janitor, :env) == :test do
-    def clear_backups_from_db, do: persistence_module().clear_backups()
+    def clear_backups do
+      BackupScheduleManager.active_schedules()
+      |> Enum.each(&BackupScheduleManager.stop/1)
+
+      persistence_module().clear_backups()
+    end
   end
 end

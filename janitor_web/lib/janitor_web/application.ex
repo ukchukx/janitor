@@ -6,6 +6,8 @@ defmodule JanitorWeb.Application do
   use Application
 
   def start(_type, _args) do
+    Confex.resolve_env!(:janitor_web)
+
     children = [
       # Start the Telemetry supervisor
       JanitorWeb.Telemetry,

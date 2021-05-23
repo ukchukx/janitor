@@ -3,7 +3,7 @@ defmodule JanitorTest do
   use ExUnit.Case
 
   setup do
-    Janitor.clear_backups_from_db()
+    Janitor.clear_backups()
   end
 
   test "backup schedules don't run outside their set time" do
@@ -57,7 +57,7 @@ defmodule JanitorTest do
   defp sample_weekly_schedule do
     BackupSchedule.new("y", "postgresql", "postgres",
       times: ["12:00", "22:00"],
-      days: ["mon", "sat"],
+      days: ["Monday", "Saturday"],
       frequency: "weekly"
     )
   end

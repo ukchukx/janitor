@@ -1,15 +1,8 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
-#
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
-
-# General application configuration
 use Mix.Config
 
 # Configures the endpoint
 config :janitor_web, JanitorWeb.Endpoint,
-  url: [host: {:system, "JANITOR_DNS_HOST"}],
+  url: [host: {:system, "JANITOR_DNS_HOST"}, scheme: "https"],
   http: [
     port: {:system, :integer, "JANITOR_PORT", 4000},
     transport_options: [socket_opts: [:inet6]]
@@ -40,14 +33,10 @@ config :janitor,
   superuser_password: {:system, "JANITOR_SUPERUSER_PASSWORD"},
   schedule_supervisor: Janitor.Supervisor.BackupScheduleManager,
   schedule_registry: Janitor.Registry.BackupScheduleManager,
-  persistence_module: JanitorPersistence,
-  ecto_repos: [JanitorPersistence.Repo]
+  persistence_module: JanitorPersistence
 
 config :janitor_persistence,
-  ecto_repos: [JanitorPersistence.Repo]
-
-config :janitor_persistence, JanitorPersistence.Repo,
-  database: "priv/db/janitor.sqlite3"
+  db_dir: "./priv/db"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

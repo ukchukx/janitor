@@ -9,8 +9,7 @@ config :janitor,
   superuser_password: {:system, "JANITOR_SUPERUSER_PASSWORD"},
   schedule_supervisor: Janitor.Supervisor.BackupScheduleManager,
   schedule_registry: Janitor.Registry.BackupScheduleManager,
-  persistence_module: JanitorPersistence,
-  ecto_repos: [JanitorPersistence.Repo]
+  persistence_module: JanitorPersistence
 
 config :logger, level: :info
 
@@ -19,9 +18,6 @@ config :logger, :console,
   metadata: []
 
 config :janitor_persistence,
-  ecto_repos: [JanitorPersistence.Repo]
-
-config :janitor_persistence, JanitorPersistence.Repo,
-  database: "../janitor_web/priv/db/janitor.sqlite3"
+  db_dir: "./priv/db"
 
 import_config "#{Mix.env()}.exs"
