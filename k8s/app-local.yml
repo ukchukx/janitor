@@ -30,7 +30,7 @@ spec:
         - containerPort: 4000
         volumeMounts:
         - name: janitor-data
-          mountPath: /apps/janitor_persistence/priv/db/janitor.db
+          mountPath: /app/priv/db/janitor.db
         readinessProbe:
           httpGet:
             path: /health/ready
