@@ -4,9 +4,8 @@ WORKDIR /app
 COPY . .
 ENV MIX_ENV=prod
 RUN cd janitor_web && mix do deps.get --only prod, deps.compile
-RUN cd janitor_web/assets && \
-  npm i && npm run deploy && cd .. && \
-  mix do phx.digest, release --overwrite
+RUN cd janitor_web/assets && npm i && npm run deploy
+RUN cd janitor_web && mix do phx.digest, release --overwrite
 
 #  --- Run ---
 FROM alpine:latest AS runner
