@@ -17,20 +17,20 @@ spec:
     spec:
       imagePullSecrets:
       - name: headless-commerce-package-access-token
-      # volumes:
-      # - name: janitor-data
-      #   hostPath:
-      #     path: /var/microk8s/data/janitor/data
-      #     type: DirectoryOrCreate
+      volumes:
+      - name: janitor-data
+        hostPath:
+          path: /var/microk8s/data/janitor/data
+          type: DirectoryOrCreate
       containers:
       - name: janitor
         image: ghcr.io/headless-commerce/janitor
         imagePullPolicy: Always
         ports:
         - containerPort: 4000
-        # volumeMounts:
-        # - name: janitor-data
-        #   mountPath: /app/priv/db/janitor.db
+        volumeMounts:
+        - name: janitor-data
+          mountPath: /app/priv/db
         readinessProbe:
           httpGet:
             path: /health/ready
