@@ -4,6 +4,7 @@ defmodule JanitorWeb.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   def start(_type, _args) do
     Confex.resolve_env!(:janitor_web)
@@ -22,7 +23,15 @@ defmodule JanitorWeb.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: JanitorWeb.Supervisor]
-    Supervisor.start_link(children, opts)
+    case Supervisor.start_link(children, opts) do
+      {:ok, _} = res ->
+        configured_password = Application.get_env(:janitor, :superuser_password)
+        Logger.info("Configured super-user password: '#{configured_password}'")
+
+        res
+      res ->
+        res
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
