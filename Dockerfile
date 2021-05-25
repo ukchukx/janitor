@@ -10,7 +10,7 @@ RUN cd janitor_web && mix do phx.digest, release --overwrite
 
 #  --- Run ---
 FROM alpine:latest AS runner
-RUN apk update && apk --no-cache --update add bash openssl
+RUN apk update && apk --no-cache --update add bash openssl mysql-client
 WORKDIR /app
 COPY --from=builder /app/janitor_web/_build/prod/rel/janitor_web .
 
