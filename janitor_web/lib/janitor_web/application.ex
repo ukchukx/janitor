@@ -25,7 +25,7 @@ defmodule JanitorWeb.Application do
     opts = [strategy: :one_for_one, name: JanitorWeb.Supervisor]
     case Supervisor.start_link(children, opts) do
       {:ok, _} = res ->
-        configured_password = Application.get_env(:janitor, :superuser_password)
+        configured_password = JanitorWeb.configured_password()
         Logger.info("Configured super-user password: '#{configured_password}'")
 
         res

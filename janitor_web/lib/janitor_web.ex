@@ -17,6 +17,12 @@ defmodule JanitorWeb do
   and import those modules here.
   """
 
+  def configured_password do
+    :janitor
+    |> Application.get_env(:superuser_password)
+    |> String.trim()
+  end
+
   def controller do
     quote do
       use Phoenix.Controller, namespace: JanitorWeb
