@@ -11,10 +11,10 @@ defmodule JanitorWeb.SessionController do
     render(conn, "signin.html", post_path: post_path, page_title: "Sign in")
   end
 
-  def create_session(conn, %{"password" => password}) do
-    configured_password = Application.get_env(:janitor, :superuser_password)
-    Logger.info("Supplied password is #{password}")
-    password_matches? =  password == configured_password
+  def create_session(conn, %{"password" => supplied_password}) do
+    configured_password = :janitor |> Application.get_env(:superuser_password) |> String.trim()
+    Logger.info("Supplied password is #{supplied_password}")
+    password_matches? =  String.trim(supplied_password) == configured_password
     Logger.info("Is supplied password same as configured password? #{password_matches?}")
 
     case password_matches? do
