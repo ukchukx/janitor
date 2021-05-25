@@ -9,3 +9,4 @@
 /janitor_persistence/priv/db
 /janitor_web/_build
 /janitor_web/deps/priv/db
+/janitor_web/assets/node_modules
