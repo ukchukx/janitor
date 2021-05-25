@@ -11,7 +11,7 @@ RUN cd janitor_web && mix do phx.digest, release --overwrite
 #  --- Run ---
 FROM alpine:latest AS runner
 RUN apk update && \
- apk add bash openssl postgresql-client postgresql-libs postgresql-dev mysql-client && \
+ apk add bash openssl postgresql-client postgresql-libs postgresql-dev mysql-client mariadb-connector-c && \
  apk add --virtual .build-deps gcc musl-dev && \
  apk --purge del .build-deps
 WORKDIR /app
