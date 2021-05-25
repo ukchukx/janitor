@@ -28,3 +28,4 @@ janitor-*.tar
 /tmp
 **/priv/plts
 **/priv/db
+.env*
