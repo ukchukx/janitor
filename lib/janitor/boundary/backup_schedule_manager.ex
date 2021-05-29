@@ -178,7 +178,7 @@ defmodule Janitor.Boundary.BackupScheduleManager do
   defp do_run_backup(schedule = %BackupSchedule{}, date_time) do
     temp_dir = Utils.tmp_dir()
     file_name = BackupSchedule.new_file_name(schedule, date_time)
-    backup_file = "#{temp_dir}#{file_name}"
+    backup_file = "#{temp_dir}/#{file_name}"
 
     schedule
     |> BackupSchedule.backup_command(backup_file)
