@@ -13,7 +13,6 @@ defmodule JanitorWeb.SessionController do
 
   def create_session(conn, %{"password" => supplied_password}) do
     configured_password = JanitorWeb.configured_password()
-    Logger.info("Supplied password is #{supplied_password}")
     password_matches? =  String.trim(supplied_password) == configured_password
     Logger.info("Is supplied password same as configured password? #{password_matches?}")
 
