@@ -172,20 +172,20 @@ defmodule Janitor.Boundary.BackupScheduleManager do
   #
   # Helpers
   #
+  defp backup_file_path(file_name), do: "#{Utils.tmp_dir()}/#{file_name}"
 
   defp bucket_module, do: Application.get_env(:janitor, :bucket_store)
 
   defp do_run_backup(schedule = %BackupSchedule{}, date_time) do
-    temp_dir = Utils.tmp_dir()
     file_name = BackupSchedule.new_file_name(schedule, date_time)
-    backup_file = "#{temp_dir}/#{file_name}"
+    backup_file = backup_file_path(file_name)
 
     schedule
     |> BackupSchedule.backup_command(backup_file)
     |> to_charlist
     |> :os.cmd()
 
-    backups = upload_and_prune_backups(schedule, temp_dir, file_name)
+    backups = upload_and_prune_backups(schedule, file_name)
 
     Logger.info("Backup done. Removing tmp file #{backup_file}")
     File.rm(backup_file)
@@ -195,10 +195,12 @@ defmodule Janitor.Boundary.BackupScheduleManager do
 
   defp upload_and_prune_backups(
          %BackupSchedule{backups: backups, preserve: limit},
-         temp_dir,
          file_name
        ) do
-    case bucket_module().upload_backup("#{temp_dir}/#{file_name}", file_name) do
+    file_name
+    |> backup_file_path()
+    |> bucket_module().upload_backup(file_name)
+    |> case do
       {:error, _} ->
         backups
 
