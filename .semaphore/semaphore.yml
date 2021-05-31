@@ -67,16 +67,22 @@ blocks:
       env_vars:
         - name: MIX_ENV
           value: "test"
+        - name: JANITOR_DB_PASS
+          value: ''
       secrets:
         - name: janitor-env-vars
       prologue:
         commands:
+          - sem-service start mysql 5.7
+          - sudo apt-get install -y -qq mysql-client
+          - mysql --host=0.0.0.0 -uroot -e "create database if not exists $JANITOR_DB_TEST_NAME"
           - checkout
           - kiex install 1.11
           - sem-version elixir 1.11
           - mix local.hex --force
           - mix local.rebar --force
           - cache restore
+          - mix deps.get
       jobs:
         - name: ex_unit
           commands:

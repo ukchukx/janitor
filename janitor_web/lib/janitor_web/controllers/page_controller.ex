@@ -56,7 +56,7 @@ defmodule JanitorWeb.PageController do
     end
   end
 
-  def delete_backup_schedule(conn, params = %{"id" => id}) do
+  def delete_backup_schedule(conn, _params = %{"id" => id}) do
     id
     |> Janitor.delete_backup_schedule()
     |> case do

@@ -17,20 +17,12 @@ spec:
     spec:
       imagePullSecrets:
       - name: headless-commerce-package-access-token
-      volumes:
-      - name: janitor-data
-        hostPath:
-          path: /var/microk8s/data/janitor/data
-          type: DirectoryOrCreate
       containers:
       - name: janitor
         image: ghcr.io/headless-commerce/janitor
         imagePullPolicy: Always
         ports:
         - containerPort: 4000
-        volumeMounts:
-        - name: janitor-data
-          mountPath: /app/priv/db
         readinessProbe:
           httpGet:
             path: /health/ready
@@ -42,12 +34,25 @@ spec:
             path: /health/live
             port: 4000
           initialDelaySeconds: 30
-          periodSeconds: 30
+          periodSeconds: 120
         env:
+        - name: JANITOR_DB_USER
+          value: 'janitor'
+        - name: JANITOR_DB_NAME
+          value: 'janitor'
+        - name: JANITOR_DB_HOST
+          value: 'mysql'
+        - name: JANITOR_DB_POOL_SIZE
+          value: '5'
         - name: JANITOR_DNS_HOST
           value: 'janitor.moview.com.ng'
         - name: JANITOR_PORT
           value: '4000'
+        - name: JANITOR_DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: janitor-secrets
+              key: dbPass
         - name: JANITOR_BUCKET_ID
           valueFrom:
             secretKeyRef:

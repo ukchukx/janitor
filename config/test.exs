@@ -8,4 +8,4 @@ config :janitor,
 
 config :janitor_persistence, JanitorPersistence.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
-  database: "priv/db/janitor_test.sqlite3"
+  database: {:system, "JANITOR_DB_TEST_NAME"}

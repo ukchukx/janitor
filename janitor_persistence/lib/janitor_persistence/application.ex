@@ -4,18 +4,33 @@ defmodule JanitorPersistence.Application do
   @moduledoc false
 
   use Application
+  alias JanitorPersistence.SetupDatabase
 
   @impl true
   def start(_type, _args) do
     Confex.resolve_env!(:janitor_persistence)
 
+    if Application.get_env(:janitor_persistence, :env) != :test do
+      SetupDatabase.create_database()
+    end
+
     children = [
-      {JanitorPersistence, []}
+      JanitorPersistence.Repo
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: JanitorPersistence.Supervisor]
-    Supervisor.start_link(children, opts)
+    case Supervisor.start_link(children, opts) do
+      {:ok, _} = res ->
+        if Application.get_env(:janitor_persistence, :env) != :test do
+          SetupDatabase.run_migrations()
+        end
+
+        res
+
+      x ->
+        x
+    end
   end
 end
