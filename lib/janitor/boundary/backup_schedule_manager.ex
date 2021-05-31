@@ -198,7 +198,7 @@ defmodule Janitor.Boundary.BackupScheduleManager do
          temp_dir,
          file_name
        ) do
-    case bucket_module().upload_backup("#{temp_dir}#{file_name}", file_name) do
+    case bucket_module().upload_backup("#{temp_dir}/#{file_name}", file_name) do
       {:error, _} ->
         backups
 
