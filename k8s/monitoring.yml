@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: janitor
+  labels:
+    app: janitor
+    release: kube-prometheus-stack
+spec:
+  endpoints:
+  - port: web
+    interval: 30s
+    path: '/metrics'
+  namespaceSelector:
+    matchNames:
+    - janitor
+  selector:
+    matchLabels:
+      app: janitor
+      release: kube-prometheus-stack

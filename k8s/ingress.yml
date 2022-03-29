@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: janitor
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    kubernetes.io/ingress.allow-http: "false"
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  tls:
+  - hosts:
+      - janitor.moview.com.ng
+    secretName: moview-com-ng
+  rules:
+  - host: janitor.moview.com.ng
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: janitor
+            port:
+              number: 80

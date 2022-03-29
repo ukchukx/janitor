@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: janitor
-  namespace: janitor
   labels:
     app: janitor
 spec:
@@ -88,7 +87,9 @@ kind: Service
 apiVersion: v1
 metadata:
   name: janitor
-  namespace: janitor
+  labels:
+    app: janitor
+    release: kube-prometheus-stack
 spec:
   ports:
   - name: web
@@ -96,49 +97,3 @@ spec:
     targetPort: 4000
   selector:
     app: janitor
----
-
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: janitor-web
-  namespace: janitor
-spec:
-  entryPoints:
-    - web
-  routes:
-  - kind: Rule
-    match: Host(`janitor.moview.com.ng`)
-    services:
-    - name: janitor
-      port: 80
-    middlewares:
-    - name: security
-      namespace: default
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: janitor-web-tls
-  namespace: janitor
-spec:
-  entryPoints:
-    - websecure
-  routes:
-  - kind: Rule
-    match: Host(`janitor.moview.com.ng`)
-    services:
-    - name: janitor
-      port: 80
-    middlewares:
-    - name: security
-      namespace: default
-  tls:
-    certResolver: le
-    domains:
-    - main: "moview.com.ng"
-      sans:
-      - "*.moview.com.ng"
-    options:
-      name: mytlsoption
-      namespace: default
