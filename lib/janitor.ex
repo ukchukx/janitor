@@ -45,8 +45,7 @@ defmodule Janitor do
   def create_backup_schedule(attrs, start_process \\ false) when is_map(attrs) do
     case BackupScheduleValidator.errors(attrs) do
       :ok ->
-        backup_schedule =
-          BackupSchedule.new(attrs.name, attrs.db, attrs.username, Keyword.new(attrs))
+        backup_schedule = BackupSchedule.new(attrs.name, attrs.db, attrs.username, Keyword.new(attrs))
 
         persistence_module().save_backup_schedule(backup_schedule)
 
