@@ -14,16 +14,16 @@ class ScheduleBackups extends Component {
   };
 
   downloadFile(index) {
-    const { meta } = this.props.backups[index];
+    const { download_link } = this.props.backups[index];
 
     this.setState({ downloading: index });
 
-    if (!meta.download_link) {
+    if (!download_link) {
       alert('No auth header.');
       return;
     }
 
-    const { meta: { download_link: { url, authorization } } } = this.props.backups[index];
+    const { download_link: { url, authorization } } = this.props.backups[index];
     downloadBackupFile(url, authorization)
       .finally(() => this.setState({ downloading: -1 }));
   }
