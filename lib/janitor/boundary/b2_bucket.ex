@@ -58,7 +58,6 @@ defmodule Janitor.Boundary.B2Bucket do
     |> S3.Upload.stream_file()
     |> S3.upload(bucket, file_name, content_type: "application/x-sql")
     |> ExAws.request()
-    |> IO.inspect()
     |> case do
       {:error, {:http_error, _status_code, %{body: body}}} ->
         Logger.error("Uploading #{file_name} returned error #{body}")
