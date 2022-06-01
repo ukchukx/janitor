@@ -33,9 +33,8 @@ const downloadBlob = (blob, filename = 'download.sql') => {
   a.click();
 };
 
-const downloadBackupFile = (url, authorization) => {
-  const fileName = url.split('/').pop();
-  return fetch(`${url}?Authorization=${authorization}`)
+const downloadBackupFile = (url, fileName) => {
+  return fetch(url)
     .then(response => response.blob())
     .then((blob) => {
       downloadBlob(blob, fileName);

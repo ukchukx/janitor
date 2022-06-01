@@ -14,7 +14,7 @@ class ScheduleBackups extends Component {
   };
 
   downloadFile(index) {
-    const { download_link } = this.props.backups[index];
+    const { download_link, name } = this.props.backups[index];
 
     this.setState({ downloading: index });
 
@@ -23,8 +23,7 @@ class ScheduleBackups extends Component {
       return;
     }
 
-    const { download_link: { url, authorization } } = this.props.backups[index];
-    downloadBackupFile(url, authorization)
+    downloadBackupFile(download_link, name)
       .finally(() => this.setState({ downloading: -1 }));
   }
 

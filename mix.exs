@@ -32,9 +32,14 @@ defmodule Janitor.MixProject do
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:elixir_uuid, "~> 1.2"},
+      {:ex_aws, git: "https://github.com/ukchukx/ex_aws.git", ref: "b4382e6", override: true},
+      {:ex_aws_s3,
+       git: "https://github.com/ukchukx/ex_aws_s3.git", ref: "a2651c2", override: true},
       {:finch, "~> 0.4"},
+      {:hackney, "~> 1.16"},
       {:janitor_persistence, path: "./janitor_persistence"},
-      {:jason, "~> 1.2"}
+      {:jason, "~> 1.2"},
+      {:sweet_xml, "~> 0.6"}
     ]
   end
 

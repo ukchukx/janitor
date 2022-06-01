@@ -6,12 +6,5 @@ config :janitor_web, JanitorWeb.Endpoint,
   http: [port: 4002],
   server: false
 
-config :janitor,
-  bucket_store: Janitor.Boundary.TestBucket
-
-config :janitor_persistence, JanitorPersistence.Repo,
-  pool: Ecto.Adapters.SQL.Sandbox,
-  database: {:system, "JANITOR_DB_TEST_NAME"}
-
 # Print only warnings and errors during test
 config :logger, level: :warn

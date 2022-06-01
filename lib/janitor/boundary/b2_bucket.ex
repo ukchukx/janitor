@@ -1,5 +1,6 @@
 defmodule Janitor.Boundary.B2Bucket do
   @moduledoc false
+  alias ExAws.S3
   alias Janitor.Core.{Backup, BackupStore}
 
   @behaviour BackupStore
@@ -9,84 +10,67 @@ defmodule Janitor.Boundary.B2Bucket do
   require Logger
 
   def all_backups do
-    bucket_id = Application.get_env(@app, :bucket_id)
-    api_path = "/b2api/v2/b2_list_file_names"
-
-    with {:ok, params} <- get_api_params(),
-         headers = [{"authorization", params.token}],
-         url = "#{params.api_url}#{api_path}?bucketId=#{bucket_id}",
-         {:ok, %{"files" => files}} <- make_request(url, headers: headers) do
-      files
-      |> Enum.map(fn file = %{"fileId" => id} -> %Backup{id: id, name: file["fileName"]} end)
-    else
+    @app
+    |> Application.get_env(:bucket_name)
+    |> S3.list_objects()
+    |> ExAws.request()
+    |> case do
       {:error, _} -> []
+      {:ok, %{body: %{contents: backups}}} -> Enum.map(backups, &%Backup{name: &1.key})
     end
   end
 
-  def backups_for_schedule(name) do
-    all_backups()
-    |> Enum.filter(&String.starts_with?(&1.name, name))
-    |> Enum.map(&add_download_link_to_backup/1)
+  def backups_for_schedule(name, add_link \\ true) do
+    backups = all_backups() |> Enum.filter(&String.starts_with?(&1.name, name))
+
+    case add_link do
+      false -> backups
+      true -> Enum.map(backups, &add_download_link_to_backup/1)
+    end
   end
 
   def clear_backups_for_schedule(name) do
     Logger.info("Clear backups for '#{name}'")
 
-    case backups_for_schedule(name) do
+    case backups_for_schedule(name, false) do
       [_ | _] = backups -> delete_backups(backups)
       [] -> Logger.warn("Backups for '#{name}' does not exist or were not returned")
     end
   end
 
   def delete_backups(backups = [_ | _]) do
-    api_path = "/b2api/v2/b2_delete_file_version"
+    backups
+    |> Enum.each(fn %Backup{name: name} ->
+      Logger.info("Deleting backup file '#{name}'")
 
-    case get_api_params() do
-      {:ok, params} ->
-        headers = [{"authorization", params.token}]
-
-        backups
-        |> Enum.each(fn %{id: id, name: name} ->
-          Logger.info("Deleting backup file '#{name}'")
-          url = "#{params.api_url}#{api_path}?fileId=#{id}&fileName=#{name}"
-          make_request(url, headers: headers, decode_result: false)
-        end)
-
-      {:error, _} ->
-        :ok
-    end
+      @app
+      |> Application.get_env(:bucket_name)
+      |> S3.delete_object(name)
+      |> ExAws.request()
+    end)
   end
 
   def upload_backup(file_path, file_name) do
-    bucket_id = Application.get_env(@app, :bucket_id)
-    file_data = File.read!(file_path)
-    %{size: file_size} = File.stat!(file_path)
+    bucket = Application.get_env(@app, :bucket_name)
+    Logger.info("Uploading #{file_name} from #{file_path}...")
 
-    data_sha_1 =
-      :crypto.hash(:sha, file_data)
-      |> Base.encode16()
-      |> String.downcase()
-
-    encoded_file_name = URI.encode(file_name)
-
-    common_headers = [
-      {"x-bz-file-name", encoded_file_name},
-      {"x-bz-content-sha1", data_sha_1},
-      {"content-length", "#{file_size}"},
-      {"content-type", "application/x-sql"}
-    ]
-
-    with {:ok, params} <- get_upload_url(bucket_id),
-         headers = [{"authorization", params.token}] ++ common_headers,
-         url = params.api_url,
-         opts = [headers: headers, body: file_data, method: :post],
-         {:ok, %{"fileId" => id, "fileName" => name}} <- make_request(url, opts) do
-      Logger.info("Uploading #{file_name} succeeded")
-      {:ok, add_download_link_to_backup(%Backup{id: id, name: name})}
-    else
-      {:error, _} ->
-        Logger.info("Uploading #{file_name} failed")
+    file_path
+    |> S3.Upload.stream_file()
+    |> S3.upload(bucket, file_name, content_type: "application/x-sql")
+    |> ExAws.request()
+    |> IO.inspect()
+    |> case do
+      {:error, {:http_error, _status_code, %{body: body}}} ->
+        Logger.error("Uploading #{file_name} returned error #{body}")
         {:error, :not_uploaded}
+
+      {:error, _} ->
+        Logger.error("Uploading #{file_name} failed")
+        {:error, :not_uploaded}
+
+      {:ok, _} ->
+        Logger.info("Uploading #{file_name} succeeded")
+        {:ok, add_download_link_to_backup(%Backup{name: file_name})}
     end
   end
 
@@ -96,22 +80,11 @@ defmodule Janitor.Boundary.B2Bucket do
 
     case get_api_params() do
       {:ok, %{token: token, download_url: d_url}} ->
-        {:ok, %{url: "#{d_url}#{file_path}", authorization: token}}
+        {:ok, "#{d_url}#{file_path}?Authorization=#{token}"}
 
       {:error, err} ->
-        Logger.error("Fetching download link for '#{file_name}' returned #{inspect(err)}")
+        Logger.warn("Fetching download link for '#{file_name}' returned #{inspect(err)}")
         {:error, :unsuccessful}
-    end
-  end
-
-  defp get_upload_url(bucket_id) do
-    with {:ok, params} <- get_api_params(),
-         url = "#{params.api_url}/b2api/v2/b2_get_upload_url?bucketId=#{bucket_id}",
-         opts = [headers: [{"authorization", params.token}]],
-         {:ok, %{"uploadUrl" => url, "authorizationToken" => token}} <- make_request(url, opts) do
-      {:ok, %{api_url: url, token: token}}
-    else
-      {:error, _} -> {:error, :could_not_get_upload_url}
     end
   end
 
@@ -120,11 +93,10 @@ defmodule Janitor.Boundary.B2Bucket do
     access_key = Application.get_env(@app, :bucket_access_key)
     auth_str = Base.encode64("#{access_key_id}:#{access_key}")
     headers = [{"authorization", "Basic #{auth_str}"}]
-    auth_url = "https://api.backblazeb2.com/b2api/v2/b2_authorize_account"
+    auth_url = Application.get_env(@app, :b2_auth_url)
 
     case make_request(auth_url, headers: headers) do
-      {:ok, %{} = map} ->
-        %{"apiUrl" => a_url, "authorizationToken" => token, "downloadUrl" => d_url} = map
+      {:ok, %{"apiUrl" => a_url, "authorizationToken" => token, "downloadUrl" => d_url}} ->
         {:ok, %{api_url: a_url, token: token, download_url: d_url}}
 
       {:error, _err} ->
@@ -149,11 +121,13 @@ defmodule Janitor.Boundary.B2Bucket do
   end
 
   defp convert_path_to_url(path) when is_binary(path) do
+    bucket_host = Application.get_env(@app, :bucket_id_host)
+
     path
     |> String.starts_with?("http")
     |> case do
       true -> path
-      false -> URI.encode("#{bucket_host()}#{path}")
+      false -> URI.encode("#{bucket_host}#{path}")
     end
   end
 
@@ -194,12 +168,10 @@ defmodule Janitor.Boundary.B2Bucket do
     end
   end
 
-  defp bucket_host, do: Application.get_env(@app, :bucket_id_host)
-
-  defp add_download_link_to_backup(backup = %Backup{meta: meta}) do
+  defp add_download_link_to_backup(backup = %Backup{}) do
     case get_download_link(backup) do
       {:error, _} -> backup
-      {:ok, link_record} -> %{backup | meta: Map.put(meta, :download_link, link_record)}
+      {:ok, link} -> %{backup | download_link: link}
     end
   end
 end

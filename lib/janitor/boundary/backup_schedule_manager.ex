@@ -221,8 +221,7 @@ defmodule Janitor.Boundary.BackupScheduleManager do
     end
   end
 
-  defp count_backups_to_be_deleted(count, limit) when count <= limit, do: 0
-  defp count_backups_to_be_deleted(count, limit), do: count - limit
+  defp count_backups_to_be_deleted(count, limit), do: max(count - limit, 0)
 
   defp remove_backups_to_be_deleted(backups, limit) do
     backups

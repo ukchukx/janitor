@@ -1,6 +1,6 @@
 defmodule Janitor.Boundary.TestBucket do
   @moduledoc false
-  alias Janitor.Core.{Backup, BackupStore, Utils}
+  alias Janitor.Core.{Backup, BackupStore}
   @behaviour BackupStore
 
   def all_backups, do: []
@@ -11,6 +11,5 @@ defmodule Janitor.Boundary.TestBucket do
 
   def delete_backups(_backups), do: :ok
 
-  def upload_backup(_file_path, file_name),
-    do: {:ok, %Backup{id: Utils.new_id(), name: file_name}}
+  def upload_backup(_file_path, file_name), do: {:ok, %Backup{name: file_name}}
 end

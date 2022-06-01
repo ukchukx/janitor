@@ -1,11 +1,10 @@
 defmodule Janitor.Core.Backup do
   @moduledoc false
   @derive Jason.Encoder
-  defstruct [:id, :name, :download_link]
+  defstruct [:name, :download_link]
 
   @type t() :: %__MODULE__{
-          id: binary,
-          download_link: map,
+          download_link: binary,
           name: binary
         }
 end
