@@ -93,7 +93,8 @@ defmodule Janitor.Boundary.B2Bucket do
     access_key = Application.get_env(@app, :bucket_access_key)
     auth_str = Base.encode64("#{access_key_id}:#{access_key}")
     headers = [{"authorization", "Basic #{auth_str}"}]
-    auth_url = Application.get_env(@app, :b2_auth_url)
+    api_url = Application.get_env(@app, :b2_api_url)
+    auth_url = "#{api_url}/b2api/v2/b2_authorize_account"
 
     case make_request(auth_url, headers: headers) do
       {:ok, %{"apiUrl" => a_url, "authorizationToken" => token, "downloadUrl" => d_url}} ->
@@ -104,30 +105,16 @@ defmodule Janitor.Boundary.B2Bucket do
     end
   end
 
-  defp make_request(path, opts) do
-    url = convert_path_to_url(path)
-    headers = build_headers(opts)
-
+  defp make_request(url, opts) do
     result =
       opts
       |> Keyword.get(:method, :get)
-      |> Finch.build(url, headers, Keyword.get(opts, :body))
+      |> Finch.build(url, build_headers(opts), Keyword.get(opts, :body))
       |> Finch.request(@app, pool_timeout: 50_000)
 
     case Keyword.get(opts, :decode_result, true) do
       false -> result
       true -> process_result(result, url)
-    end
-  end
-
-  defp convert_path_to_url(path) when is_binary(path) do
-    bucket_host = Application.get_env(@app, :bucket_id_host)
-
-    path
-    |> String.starts_with?("http")
-    |> case do
-      true -> path
-      false -> URI.encode("#{bucket_host}#{path}")
     end
   end
 

@@ -2,7 +2,6 @@ use Mix.Config
 
 config :janitor,
   bucket_store: Janitor.Boundary.B2Bucket,
-  bucket_id: {:system, "JANITOR_BUCKET_ID"},
   bucket_name: {:system, "JANITOR_BUCKET_NAME"},
   bucket_access_key: {:system, "JANITOR_BUCKET_ACCESS_KEY"},
   bucket_access_key_id: {:system, "JANITOR_BUCKET_ACCESS_KEY_ID"},
@@ -10,7 +9,7 @@ config :janitor,
   schedule_supervisor: Janitor.Supervisor.BackupScheduleManager,
   schedule_registry: Janitor.Registry.BackupScheduleManager,
   persistence_module: JanitorPersistence,
-  b2_auth_url: "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
+  b2_api_url: "https://api.backblazeb2.com",
   ecto_repos: [JanitorPersistence.Repo]
 
 config :ex_aws,
