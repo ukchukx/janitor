@@ -9,6 +9,8 @@ defmodule Janitor.Boundary.TestBucket do
 
   def clear_backups_for_schedule(_name), do: :ok
 
+  def clear_orphaned_backups_for_schedule(_name), do: :ok
+
   def delete_backups(_backups), do: :ok
 
   def upload_backup(_file_path, file_name), do: {:ok, %Backup{name: file_name}}

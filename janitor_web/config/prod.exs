@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :janitor_web, JanitorWeb.Endpoint,
   server: true,

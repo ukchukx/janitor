@@ -59,6 +59,13 @@ defmodule Janitor.Boundary.BackupScheduleManager do
     end
   end
 
+  def prune_backup(id) do
+    case running?(id) do
+      true -> id |> via |> GenServer.call(:prune_backup, 120_000)
+      false -> :not_running
+    end
+  end
+
   def delete_backup(id, file_name) do
     case running?(id) do
       true -> id |> via |> GenServer.call({:delete_backup, file_name}, 30_000)
@@ -134,6 +141,14 @@ defmodule Janitor.Boundary.BackupScheduleManager do
     {:reply, schedule, schedule}
   end
 
+  def handle_call(:prune_backup, _from, schedule) do
+    now = NaiveDateTime.utc_now()
+    Logger.info("Manually prune backup of #{schedule} at #{now}")
+    schedule = %{schedule | backups: prune_backups(schedule)}
+
+    {:reply, schedule, schedule}
+  end
+
   def handle_call({:update_fields, updated_schedule}, _from, %{backups: backups}) do
     schedule = %{updated_schedule | backups: backups}
     {:reply, schedule, schedule}
@@ -185,40 +200,46 @@ defmodule Janitor.Boundary.BackupScheduleManager do
     |> to_charlist
     |> :os.cmd()
 
-    backups = upload_and_prune_backups(schedule, file_name)
+    backups =
+      schedule
+      |> upload_backup(file_name)
+      |> prune_backups()
 
-    Logger.info("Backup done. Removing tmp file #{backup_file}")
+    Logger.info("Removing tmp file #{backup_file}")
     File.rm(backup_file)
 
     %{schedule | backups: backups}
   end
 
-  defp upload_and_prune_backups(
-         %BackupSchedule{backups: backups, preserve: limit},
-         file_name
-       ) do
+  defp upload_backup(schedule = %BackupSchedule{backups: backups}, file_name) do
     file_name
     |> backup_file_path()
     |> bucket_module().upload_backup(file_name)
     |> case do
       {:error, _} ->
-        backups
+        Logger.error("Failed to backup #{file_name}")
+        schedule
 
       {:ok, backup} ->
-        {backups_to_be_deleted, backups} =
-          backups
-          |> List.insert_at(-1, backup)
-          |> remove_backups_to_be_deleted(limit)
-
-        num_to_be_deleted = length(backups_to_be_deleted)
-
-        if num_to_be_deleted > 0 do
-          Logger.info("Removing #{num_to_be_deleted} oldest backups")
-        end
-
-        delete_backups(backups_to_be_deleted)
-        backups
+        Logger.info("Backed up #{file_name}")
+        %{schedule | backups: List.insert_at(backups, -1, backup)}
     end
+  end
+
+  defp prune_backups(schedule = %BackupSchedule{backups: backups, preserve: limit}) do
+    {backups_to_be_deleted, backups} = remove_backups_to_be_deleted(backups, limit)
+    num_to_be_deleted = length(backups_to_be_deleted)
+
+    if num_to_be_deleted > 0 do
+      Logger.info("Removing #{num_to_be_deleted} oldest backups")
+      delete_backups(backups_to_be_deleted)
+    end
+
+    # flush from bucket
+    file_name = BackupSchedule.file_name_prefix(schedule)
+    bucket_module().clear_orphaned_backups_for_schedule(file_name, backups)
+
+    backups
   end
 
   defp count_backups_to_be_deleted(count, limit), do: max(count - limit, 0)

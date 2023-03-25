@@ -1,8 +1,8 @@
-use Mix.Config
+import Config
 
 # Configures the endpoint
 config :janitor_web, JanitorWeb.Endpoint,
-  url: [host: {:system, "JANITOR_DNS_HOST"}, scheme: "https"],
+  url: [host: {:system, "JANITOR_DNS_HOST"}, scheme: "https", port: 443],
   http: [
     port: {:system, :integer, "JANITOR_PORT", 4000},
     transport_options: [socket_opts: [:inet6]]

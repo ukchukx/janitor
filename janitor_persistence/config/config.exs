@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :janitor_persistence,
   ecto_repos: [JanitorPersistence.Repo]

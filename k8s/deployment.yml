@@ -34,6 +34,9 @@ spec:
             port: 4000
           initialDelaySeconds: 30
           periodSeconds: 120
+        envFrom:
+        - secretRef:
+            name: janitor-secrets
         env:
         - name: JANITOR_DB_USER
           value: 'janitor'
@@ -47,41 +50,6 @@ spec:
           value: 'janitor.moview.com.ng'
         - name: JANITOR_PORT
           value: '4000'
-        - name: JANITOR_DB_PASS
-          valueFrom:
-            secretKeyRef:
-              name: janitor-secrets
-              key: dbPass
-        - name: JANITOR_BUCKET_ID
-          valueFrom:
-            secretKeyRef:
-              name: janitor-secrets
-              key: bucketId
-        - name: JANITOR_BUCKET_NAME
-          valueFrom:
-            secretKeyRef:
-              name: janitor-secrets
-              key: bucketName
-        - name: JANITOR_BUCKET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: janitor-secrets
-              key: bucketAccessKey
-        - name: JANITOR_BUCKET_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              name: janitor-secrets
-              key: bucketAccessKeyId
-        - name: JANITOR_SUPERUSER_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: janitor-secrets
-              key: superuserPassword
-        - name: JANITOR_SECRET_KEY_BASE
-          valueFrom:
-            secretKeyRef:
-              name: janitor-secrets
-              key: secretKeyBase
 ---
 kind: Service
 apiVersion: v1

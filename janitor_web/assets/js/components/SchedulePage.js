@@ -13,19 +13,10 @@ class SchedulePage extends Component {
     endpoint: 'api/schedules/'
   };
 
-  updateSchedule(schedule) {
-    let { state: { schedules, updating } } = this;
+  updateSchedule(_schedule) {
+    this.fetchSchedules();
 
-    const index = schedules.findIndex(({ id }) => schedule.id === id);
-    if (index === -1) {
-      schedules = [...schedules, schedule];
-    } else {
-      schedules.splice(index, 1, schedule)
-    }
-
-    updating = -1;
-
-    this.setState({ schedules, updating });
+    this.setState({ updating: -1 });
   }
 
   deleteSchedule(index) {
@@ -38,7 +29,7 @@ class SchedulePage extends Component {
     makeRequest(`${endpoint}${schedules[index].id}`, 'delete')
       .then((response) => {
         if (response.status === 204) {
-          schedules.splice(index, 1);
+          this.fetchSchedules();
 
           if (updating === index) updating = -1;
           if (viewing === index) viewing = -1;
@@ -57,10 +48,14 @@ class SchedulePage extends Component {
     this.setState({ viewing });
   }
 
-  componentDidMount() {
+  fetchSchedules() {
     makeRequest(this.state.endpoint)
       .then(response => response.status === 200 ? response.json() : [])
       .then(schedules => this.setState({ schedules }));
+  }
+
+  componentDidMount() {
+    this.fetchSchedules();
   }
 
   render() {
